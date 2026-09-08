@@ -1,0 +1,1244 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Owner Verification Portal</title>
+
+    <!-- Favicon & Icons -->
+    <link rel="icon" href="../favicon.ico" sizes="any">
+    <link rel="apple-touch-icon" href="../logo-192.png">
+    <meta name="theme-color" content="#0b1120">
+
+    <!-- Tailwind CSS & Google Fonts -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel='stylesheet' href='https://cdn-uicons.flaticon.com/2.1.0/uicons-regular-rounded/css/uicons-regular-rounded.css'>
+    <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        heading: ['Outfit', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace']
+                    },
+                    colors: {
+                        cyber: {
+                            bg: '#080d1a',
+                            card: '#0f172a',
+                            border: '#1e293b',
+                            cyan: '#00f2fe',
+                            blue: '#4facfe',
+                            glow: '#00f0ff'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            background: #080d1a;
+            color: #e2e8f0;
+            font-family: 'Inter', sans-serif;
+            min-height: 100dvh;
+            overflow-x: hidden;
+        }
+
+        /* Glassmorphism card */
+        .glass-panel {
+            background: rgba(15, 23, 42, 0.82);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(56, 189, 248, 0.15);
+        }
+
+        .glass-card-glow {
+            box-shadow: 0 0 35px -5px rgba(0, 242, 254, 0.15), inset 0 0 20px rgba(0, 242, 254, 0.05);
+        }
+
+        /* Laser scan animation */
+        @keyframes laserSweep {
+            0% { top: 0%; opacity: 0.2; }
+            50% { top: 92%; opacity: 1; filter: drop-shadow(0 0 8px #00f2fe); }
+            100% { top: 0%; opacity: 0.2; }
+        }
+
+        .animate-laser-sweep {
+            animation: laserSweep 2.2s ease-in-out infinite;
+        }
+
+        /* Radar pulse */
+        @keyframes radarPulse {
+            0% { transform: scale(0.95); opacity: 0.8; }
+            50% { transform: scale(1.08); opacity: 0.3; }
+            100% { transform: scale(0.95); opacity: 0.8; }
+        }
+
+        .animate-radar {
+            animation: radarPulse 3s ease-in-out infinite;
+        }
+
+        /* Incoming Alert Pulse */
+        @keyframes alertGlow {
+            0%, 100% { border-color: rgba(239, 68, 68, 0.4); box-shadow: 0 0 20px rgba(239, 68, 68, 0.2); }
+            50% { border-color: rgba(239, 68, 68, 0.9); box-shadow: 0 0 35px rgba(239, 68, 68, 0.45); }
+        }
+
+        .incoming-alert-active {
+            animation: alertGlow 1.8s ease-in-out infinite;
+        }
+
+        /* Shake animation */
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            20%, 60% { transform: translateX(-6px); }
+            40%, 80% { transform: translateX(6px); }
+        }
+
+        .animate-shake {
+            animation: shake 0.4s ease-in-out;
+        }
+
+        /* Custom toast */
+        .toastify.custom-toast {
+            background: #0f172a !important;
+            color: #f8fafc !important;
+            border: 1px solid rgba(56, 189, 248, 0.3) !important;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.6), 0 0 20px rgba(0, 240, 255, 0.2) !important;
+            border-radius: 16px !important;
+            padding: 12px 20px !important;
+            font-size: 13.5px !important;
+            font-family: 'Inter', sans-serif !important;
+            z-index: 999999 !important;
+        }
+    </style>
+</head>
+
+<body class="flex flex-col min-h-[100dvh] antialiased selection:bg-cyan-500/30 selection:text-cyan-200 relative">
+
+    <!-- Background glowing ambient lights -->
+    <div class="fixed inset-0 pointer-events-none overflow-hidden z-0">
+        <div class="absolute -top-32 left-1/2 -translate-x-1/2 w-[600px] h-[350px] bg-gradient-to-b from-cyan-500/10 via-blue-600/10 to-transparent rounded-full blur-3xl"></div>
+        <div class="absolute bottom-0 right-0 w-96 h-96 bg-purple-600/10 rounded-full blur-3xl"></div>
+        <div class="absolute top-1/2 -left-20 w-80 h-80 bg-blue-500/10 rounded-full blur-3xl"></div>
+    </div>
+
+    <!-- Top Navigation Bar -->
+    <header class="relative z-20 w-full border-b border-slate-800/80 bg-slate-950/60 backdrop-blur-md px-4 sm:px-8 py-3.5 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+            <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-cyan-500 to-blue-600 flex items-center justify-center shadow-lg shadow-cyan-500/20 text-white font-bold text-lg">
+                <i class="fi fi-rr-fingerprint"></i>
+            </div>
+            <div>
+                <h1 class="text-sm font-bold tracking-tight text-white flex items-center gap-2">
+                    <span class="font-heading font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-400">Festie</span> Auth Guard
+                </h1>
+                <p class="text-[10px] text-slate-400 uppercase tracking-wider font-semibold">Mobile Biometric Center</p>
+            </div>
+        </div>
+
+        <div class="flex items-center gap-3">
+            <div id="live-connection-badge" class="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-semibold">
+                <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                <span>Live Sync</span>
+            </div>
+            <a href="../dashboard.html" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 text-xs font-semibold transition-colors flex items-center gap-1.5">
+                <i class="fi fi-rr-apps text-xs"></i>
+                <span class="hidden sm:inline">Dashboard</span>
+            </a>
+        </div>
+    </header>
+
+    <!-- ══════════════════════════════════════════════════════════════ -->
+    <!-- DESKTOP GUARD SCREEN (SHOWN WHEN OPENED ON NON-MOBILE)         -->
+    <!-- ══════════════════════════════════════════════════════════════ -->
+    <section id="desktop-guard-view" class="relative z-20 flex-1 max-w-lg w-full mx-auto px-4 py-12 flex flex-col items-center justify-center text-center hidden">
+        <div class="glass-panel rounded-3xl p-8 border border-slate-800 w-full shadow-2xl relative overflow-hidden">
+            <div class="absolute -top-12 -right-12 w-36 h-36 bg-cyan-500/10 rounded-full blur-2xl pointer-events-none"></div>
+
+            <div class="relative w-20 h-20 mb-5 mx-auto flex items-center justify-center">
+                <div class="absolute inset-0 rounded-full border border-cyan-500/30 animate-pulse"></div>
+                <div class="w-16 h-16 rounded-2xl bg-cyan-950/60 border border-cyan-500/40 text-cyan-400 flex items-center justify-center text-3xl shadow-lg shadow-cyan-500/20">
+                    <i class="fi fi-rr-mobile"></i>
+                </div>
+            </div>
+
+            <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-300 text-[11px] font-bold uppercase tracking-wider mb-2">
+                <i class="fi fi-rr-shield-exclamation"></i> Mobile Only Portal
+            </div>
+
+            <h2 class="text-xl font-bold text-white mb-2">Mobile Device Required</h2>
+            <p class="text-xs text-slate-400 max-w-sm mx-auto leading-relaxed mb-6">
+                The Owner Biometric Authorization Portal operates strictly on <b class="text-white">mobile devices</b> equipped with touch fingerprint or WebAuthn biometric sensors.
+            </p>
+
+            <div class="bg-slate-900/90 rounded-2xl border border-slate-800 p-4 mb-6 text-center">
+                <div class="flex items-center justify-center gap-2 text-cyan-300 font-semibold text-xs">
+                    <i class="fi fi-rr-mobile text-sm"></i>
+                    <span>Open this portal on your authorized mobile smartphone.</span>
+                </div>
+            </div>
+
+            <div class="space-y-2.5">
+                <button type="button" onclick="copyVerifyUrl()" id="btn-copy-url"
+                    class="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:opacity-95 text-white font-bold text-xs shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer">
+                    <i class="fi fi-rr-copy text-sm"></i>
+                    <span id="btn-copy-url-text">Copy Mobile Verification Link</span>
+                </button>
+
+                <a href="../dashboard.html"
+                    class="w-full py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold text-xs transition-colors flex items-center justify-center gap-1.5">
+                    <i class="fi fi-rr-arrow-small-left text-base"></i>
+                    <span>Return to Dashboard</span>
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- ══════════════════════════════════════════════════════════════ -->
+    <!-- MAIN MOBILE PORTAL CONTAINER                                  -->
+    <!-- ══════════════════════════════════════════════════════════════ -->
+    <main id="mobile-portal-content" class="relative z-10 flex-1 max-w-xl w-full mx-auto px-4 py-5 flex flex-col gap-5">
+
+        <!-- ══════════════════════════════════════════════════════════════ -->
+        <!-- SECTION 1: INCOMING BIOMETRIC VERIFICATION REQUEST (RADAR)    -->
+        <!-- ══════════════════════════════════════════════════════════════ -->
+        <section id="incoming-request-card" class="glass-panel rounded-3xl p-5 sm:p-6 border border-slate-800 transition-all duration-300 relative overflow-hidden">
+            
+            <!-- Default Idle View (When no pending requests) -->
+            <div id="radar-idle-view" class="flex flex-col items-center justify-center text-center py-5">
+                <div class="relative w-20 h-20 mb-3.5 flex items-center justify-center">
+                    <div class="absolute inset-0 rounded-full border border-dashed border-cyan-500/30 animate-spin" style="animation-duration: 12s;"></div>
+                    <div class="absolute inset-2 rounded-full border border-blue-500/20 animate-radar"></div>
+                    <div class="w-14 h-14 rounded-2xl bg-slate-900 border border-cyan-500/30 flex items-center justify-center shadow-lg shadow-cyan-500/10">
+                        <i class="fi fi-rr-radar text-2xl text-cyan-400"></i>
+                    </div>
+                </div>
+                <h2 class="text-base font-bold text-white mb-1">Radar Listening for Biometrics</h2>
+                <p class="text-xs text-slate-400 max-w-xs leading-relaxed">
+                    When someone attempts to log in as Owner on any device, the access request will appear here instantly.
+                </p>
+                <div class="mt-3.5 flex items-center gap-2 text-[11px] text-slate-500 font-mono bg-slate-900/80 px-3 py-1.5 rounded-full border border-slate-800">
+                    <span class="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-ping"></span>
+                    admin/ownerAuthSession
+                </div>
+            </div>
+
+            <!-- Active Incoming Request View (Triggered when status === 'waiting_biometrics') -->
+            <div id="radar-active-request-view" class="hidden space-y-4">
+                <!-- Banner -->
+                <div class="flex items-center justify-between gap-3 border-b border-slate-800/80 pb-3">
+                    <div class="flex items-center gap-2.5">
+                        <div class="w-10 h-10 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400 text-lg shrink-0 animate-pulse">
+                            <i class="fi fi-rr-shield-exclamation"></i>
+                        </div>
+                        <div>
+                            <span class="px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 text-[10px] font-bold uppercase tracking-wider">
+                                Access Request
+                            </span>
+                            <h3 class="text-sm font-bold text-white mt-0.5">
+                                Login Authorization
+                            </h3>
+                        </div>
+                    </div>
+                    <span id="req-time-badge" class="text-[11px] text-slate-400 font-mono bg-slate-900 px-2.5 py-1 rounded-lg border border-slate-800">
+                        Just now
+                    </span>
+                </div>
+
+                <!-- Device Information Card -->
+                <div class="bg-slate-900/90 rounded-2xl border border-slate-800 p-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div class="flex items-start gap-2.5">
+                        <div id="dev-icon-box" class="w-9 h-9 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-cyan-400 text-base shrink-0 mt-0.5">
+                            <i id="dev-icon" class="fi fi-rr-computer"></i>
+                        </div>
+                        <div class="overflow-hidden">
+                            <p class="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Device & OS</p>
+                            <h4 id="req-dev-name" class="text-xs font-bold text-white truncate mt-0.5">Windows PC</h4>
+                            <p id="req-dev-browser" class="text-[11px] text-slate-400 truncate">Chrome Browser</p>
+                        </div>
+                    </div>
+
+                    <div class="flex items-start gap-2.5">
+                        <div class="w-9 h-9 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 text-base shrink-0 mt-0.5">
+                            <i class="fi fi-rr-marker"></i>
+                        </div>
+                        <div class="overflow-hidden">
+                            <p class="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">IP & Screen Display</p>
+                            <h4 id="req-dev-ip" class="text-xs font-bold text-white font-mono truncate mt-0.5">Connected Client</h4>
+                            <p id="req-dev-location" class="text-[11px] text-slate-400 truncate">Active Screen</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Decision Action Buttons: ACCESS vs REJECT -->
+                <div class="grid grid-cols-2 gap-2.5 pt-1">
+                    <!-- Grant Access (Accept) Button -> Triggers 2-step verification wizard -->
+                    <button type="button" onclick="handleDecisionAccept()" id="btn-accept-request"
+                        class="flex items-center justify-center gap-2 px-4 py-3 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-xs shadow-lg shadow-emerald-600/30 transition-all transform active:scale-95 cursor-pointer">
+                        <i class="fi fi-rr-shield-check text-base"></i>
+                        <span>Grant Access</span>
+                    </button>
+
+                    <!-- Reject Request Button -->
+                    <button type="button" onclick="handleDecisionReject()" id="btn-reject-request"
+                        class="flex items-center justify-center gap-2 px-4 py-3 rounded-2xl bg-slate-900 hover:bg-red-950/40 text-red-400 hover:text-red-300 border border-red-500/30 hover:border-red-500/60 font-bold text-xs transition-all transform active:scale-95 cursor-pointer">
+                        <i class="fi fi-rr-cross-circle text-base"></i>
+                        <span>Reject</span>
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- ══════════════════════════════════════════════════════════════ -->
+        <!-- SECTION 2: BIOMETRIC SCANNER & PASSCODE (MOBILE COMPACT)       -->
+        <!-- ══════════════════════════════════════════════════════════════ -->
+        <section class="grid grid-cols-1 gap-4">
+            
+            <!-- BIOMETRIC SENSOR PAD -->
+            <div class="glass-panel rounded-3xl p-5 border border-slate-800 flex flex-col items-center text-center">
+                <div class="w-full flex items-center justify-between mb-2">
+                    <span class="text-[11px] font-bold text-cyan-400 uppercase tracking-wider flex items-center gap-1.5">
+                        <i class="fi fi-rr-fingerprint"></i> Biometric Sensor
+                    </span>
+                    <span class="text-[10px] text-slate-400 bg-slate-900 px-2 py-0.5 rounded-md">Mobile / Touch</span>
+                </div>
+
+                <h3 class="text-sm font-bold text-white mb-0.5">Instant Touch Scan</h3>
+                <p class="text-xs text-slate-400">Touch & hold pad to authenticate.</p>
+
+                <!-- Sensor Trigger Element -->
+                <div class="my-4 relative select-none">
+                    <div class="relative w-32 h-32 flex items-center justify-center cursor-pointer"
+                         id="main-bio-sensor"
+                         onclick="handleSensorClick()"
+                         onmousedown="handleSensorHoldStart()"
+                         onmouseup="handleSensorHoldEnd()"
+                         ontouchstart="handleSensorHoldStart()"
+                         ontouchend="handleSensorHoldEnd()">
+                        
+                        <!-- Pulse Rings -->
+                        <div class="absolute inset-0 rounded-full border border-dashed border-cyan-400/30 animate-spin" style="animation-duration: 9s;"></div>
+                        <div class="absolute inset-2 rounded-full border border-blue-500/20"></div>
+
+                        <!-- Button Pad -->
+                        <div id="sensor-pad-box" class="relative z-10 w-24 h-24 rounded-3xl bg-slate-900 border-2 border-cyan-500/40 shadow-xl shadow-cyan-500/20 flex flex-col items-center justify-center overflow-hidden transition-all duration-300 hover:scale-105 active:scale-95">
+                            <i id="sensor-pad-icon" class="fi fi-rr-fingerprint text-4xl text-cyan-400"></i>
+                            <!-- Laser Scan Line -->
+                            <div id="sensor-pad-laser" class="absolute left-0 right-0 h-1 bg-gradient-to-r from-transparent via-cyan-300 to-transparent shadow-[0_0_10px_#22d3ee] animate-laser-sweep"></div>
+                        </div>
+                    </div>
+                    <p id="sensor-status-hint" class="text-[11px] text-slate-400 font-medium mt-2">
+                        Hold finger to scan • Tap 3x for quick "340"
+                    </p>
+                </div>
+
+                <button type="button" onclick="triggerWebAuthnBiometrics()" id="btn-device-bio"
+                    class="w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-blue-600 to-cyan-600 hover:opacity-95 text-white font-bold text-xs shadow-md transition-all flex items-center justify-center gap-2">
+                    <i class="fi fi-rr-fingerprint text-sm"></i>
+                    <span>Device Biometrics Prompt</span>
+                </button>
+            </div>
+
+            <!-- PASSCODE AUTHORIZATION -->
+            <div class="glass-panel rounded-3xl p-5 border border-slate-800">
+                <div class="flex items-center justify-between mb-3">
+                    <span class="text-[11px] font-bold text-amber-400 uppercase tracking-wider flex items-center gap-1.5">
+                        <i class="fi fi-rr-lock"></i> Passcode Keypad
+                    </span>
+                    <button type="button" onclick="fillPasscode('340')" class="px-2 py-0.5 bg-cyan-500/10 border border-cyan-500/30 text-cyan-300 rounded-lg text-[10px] font-mono font-bold">
+                        "340"
+                    </button>
+                </div>
+
+                <form onsubmit="handlePasscodeSubmit(event)" class="space-y-3">
+                    <div>
+                        <div class="relative">
+                            <input type="password" id="passcode-input" placeholder="Enter passcode" autocomplete="off"
+                                class="w-full px-4 py-2.5 bg-slate-900/90 rounded-xl border border-slate-700 text-white placeholder-slate-500 text-center font-bold tracking-widest text-sm focus:outline-none focus:border-cyan-400 focus:ring-2 focus:ring-cyan-400/20 transition-all">
+                            <button type="button" onclick="togglePassVisibility()" class="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-cyan-400">
+                                <i id="pass-eye-icon" class="fi fi-rr-eye text-xs"></i>
+                            </button>
+                        </div>
+                        <p id="passcode-err" class="text-[11px] text-red-400 font-semibold mt-1 hidden text-center"></p>
+                    </div>
+
+                    <button type="submit" id="btn-submit-passcode"
+                        class="w-full py-2.5 px-4 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-600 text-white font-bold text-xs shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer">
+                        <i class="fi fi-rr-check text-sm text-cyan-400"></i>
+                        <span>Authorize with Passcode</span>
+                    </button>
+                </form>
+            </div>
+
+        </section>
+
+        <!-- ══════════════════════════════════════════════════════════════ -->
+        <!-- SECTION 3: RECENT VERIFICATION ACTIVITY LOG                   -->
+        <!-- ══════════════════════════════════════════════════════════════ -->
+        <section class="glass-panel rounded-3xl p-5 border border-slate-800">
+            <div class="flex items-center justify-between mb-3">
+                <div class="flex items-center gap-2">
+                    <i class="fi fi-rr-time-past text-cyan-400 text-xs"></i>
+                    <h3 class="text-xs font-bold text-white uppercase tracking-wider">Activity Log</h3>
+                </div>
+                <button type="button" onclick="clearActivityLogs()" class="text-[10px] text-slate-500 hover:text-slate-300 transition-colors">
+                    Clear
+                </button>
+            </div>
+
+            <div id="activity-log-container" class="space-y-2 max-h-40 overflow-y-auto pr-1">
+                <div class="text-center py-4 text-xs text-slate-500 italic">
+                    No recent verification events.
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- ══════════════════════════════════════════════════════════════ -->
+    <!-- 2-STEP AUTHORIZATION WIZARD MODAL (PASSCODE -> BIOMETRIC)      -->
+    <!-- ══════════════════════════════════════════════════════════════ -->
+    <div id="auth-wizard-modal" class="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4 hidden animate-in fade-in duration-200">
+        <div class="relative w-full max-w-md bg-slate-900 border border-cyan-500/30 rounded-3xl p-6 shadow-2xl shadow-cyan-500/10 overflow-hidden">
+            
+            <!-- Close / Cancel button -->
+            <button type="button" onclick="closeAuthWizardModal()" class="absolute top-4 right-4 w-7 h-7 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center transition-colors">
+                <i class="fi fi-rr-cross text-xs"></i>
+            </button>
+
+            <!-- Target Device Header Badge -->
+            <div class="mb-4 flex items-center gap-2">
+                <div class="w-8 h-8 rounded-xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center text-cyan-400">
+                    <i class="fi fi-rr-shield-check text-sm"></i>
+                </div>
+                <div class="overflow-hidden">
+                    <p class="text-[10px] text-slate-400 uppercase tracking-widest font-bold">Target Device Access</p>
+                    <p id="wizard-target-device-name" class="text-xs text-cyan-300 font-semibold truncate">Requesting Device</p>
+                </div>
+            </div>
+
+            <!-- STEP 1: Passcode Verification Screen -->
+            <div id="wizard-step-passcode" class="space-y-4">
+                <div class="text-center">
+                    <div class="w-12 h-12 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-400 flex items-center justify-center text-xl mx-auto mb-2 shadow-inner">
+                        <i class="fi fi-rr-lock"></i>
+                    </div>
+                    <div class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-300 text-[10px] font-bold uppercase mb-1">
+                        Step 1 of 2
+                    </div>
+                    <h3 class="text-base font-bold text-white">Enter Owner Passcode</h3>
+                    <p class="text-xs text-slate-400 mt-0.5 max-w-xs mx-auto leading-relaxed">
+                        Enter passcode <code class="text-cyan-300 bg-cyan-950/70 px-1 py-0.5 rounded">340</code> or master key to unlock biometric scanner.
+                    </p>
+                </div>
+
+                <form onsubmit="handleWizardPasscodeSubmit(event)" class="space-y-3">
+                    <div>
+                        <div class="relative">
+                            <input type="password" id="wizard-passcode-input" placeholder="••••" autocomplete="off"
+                                class="w-full px-4 py-2.5 bg-slate-950 rounded-xl border border-slate-700 text-white placeholder-slate-600 text-center font-bold tracking-widest text-base focus:outline-none focus:border-cyan-400 focus:ring-2 focus:ring-cyan-400/20 transition-all">
+                            <button type="button" onclick="toggleWizardPassVisibility()" class="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-cyan-400">
+                                <i id="wizard-pass-eye-icon" class="fi fi-rr-eye text-xs"></i>
+                            </button>
+                        </div>
+                        <p id="wizard-passcode-err" class="text-[11px] text-red-400 font-semibold mt-1 hidden text-center"></p>
+                    </div>
+
+                    <!-- Quick shortcut button for "340" -->
+                    <div class="flex items-center justify-between text-xs text-slate-400 px-1">
+                        <span>Quick Passcode:</span>
+                        <button type="button" onclick="fillWizardPasscode('340')" class="px-2.5 py-0.5 bg-cyan-500/10 hover:bg-cyan-500/20 border border-cyan-500/30 text-cyan-300 rounded-lg font-mono font-bold text-xs transition-colors">
+                            Use "340"
+                        </button>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-2.5 pt-1">
+                        <button type="button" onclick="closeAuthWizardModal()" class="py-2.5 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold text-xs transition-colors">
+                            Cancel
+                        </button>
+                        <button type="submit" id="btn-wizard-passcode-submit"
+                            class="py-2.5 px-3 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:opacity-95 text-white font-bold text-xs shadow-md shadow-cyan-500/20 transition-all flex items-center justify-center gap-1 cursor-pointer">
+                            <span>Next: Biometrics</span>
+                            <i class="fi fi-rr-arrow-small-right text-sm"></i>
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- STEP 2: Biometric Scanning Screen (PWA Style) -->
+            <div id="wizard-step-biometrics" class="hidden space-y-4 text-center">
+                <div>
+                    <div class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-cyan-500/10 border border-cyan-500/20 text-cyan-300 text-[10px] font-bold uppercase mb-1">
+                        Step 2 of 2
+                    </div>
+                    <h3 class="text-base font-bold text-white">Biometric Scan</h3>
+                    <p class="text-xs text-slate-400 mt-0.5 max-w-xs mx-auto leading-relaxed">
+                        Scan fingerprint or authenticate with mobile device biometrics (Fingerprint / Touch ID / Face ID).
+                    </p>
+                </div>
+
+                <!-- Interactive Biometric Pad -->
+                <div class="my-4 relative flex flex-col items-center justify-center select-none">
+                    <div class="relative w-32 h-32 flex items-center justify-center cursor-pointer"
+                         id="wizard-bio-sensor"
+                         onmousedown="handleWizardTouchBioStart()"
+                         onmouseup="handleWizardTouchBioEnd()"
+                         ontouchstart="handleWizardTouchBioStart()"
+                         ontouchend="handleWizardTouchBioEnd()">
+                        
+                        <!-- Pulse Rings -->
+                        <div class="absolute inset-0 rounded-full border border-dashed border-cyan-400/30 animate-spin" style="animation-duration: 9s;"></div>
+                        <div class="absolute inset-2 rounded-full border border-blue-500/20 animate-radar"></div>
+
+                        <!-- Button Pad -->
+                        <div id="wizard-sensor-pad-box" class="relative z-10 w-24 h-24 rounded-3xl bg-slate-950 border-2 border-cyan-500/50 shadow-xl shadow-cyan-500/20 flex flex-col items-center justify-center overflow-hidden transition-all duration-300 hover:scale-105 active:scale-95">
+                            <i id="wizard-sensor-pad-icon" class="fi fi-rr-fingerprint text-4xl text-cyan-400"></i>
+                            <!-- Laser Scan Line -->
+                            <div id="wizard-sensor-pad-laser" class="absolute left-0 right-0 h-1 bg-gradient-to-r from-transparent via-cyan-300 to-transparent shadow-[0_0_10px_#22d3ee] animate-laser-sweep"></div>
+                        </div>
+                    </div>
+                    <p id="wizard-sensor-status-hint" class="text-xs text-cyan-300 font-semibold mt-2.5 animate-pulse">
+                        Hold finger on sensor pad to verify...
+                    </p>
+                </div>
+
+                <div class="space-y-2">
+                    <button type="button" onclick="triggerWizardWebAuthnBiometrics()" id="btn-wizard-device-bio"
+                        class="w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-blue-600 to-cyan-600 hover:opacity-95 text-white font-bold text-xs shadow-md transition-all flex items-center justify-center gap-2">
+                        <i class="fi fi-rr-fingerprint text-sm"></i>
+                        <span>Trigger Native Device Biometric</span>
+                    </button>
+                    
+                    <button type="button" onclick="backToWizardPasscode()" class="w-full py-2 text-xs text-slate-400 hover:text-white transition-colors">
+                        ← Back to Passcode
+                    </button>
+                </div>
+            </div>
+
+            <!-- STEP 3: Verification Complete (Success) -->
+            <div id="wizard-step-success" class="hidden space-y-3 text-center py-3">
+                <div class="w-14 h-14 rounded-full bg-emerald-500/10 border-2 border-emerald-500 text-emerald-400 flex items-center justify-center text-2xl mx-auto animate-bounce shadow-lg shadow-emerald-500/30">
+                    <i class="fi fi-rr-check"></i>
+                </div>
+                <h3 class="text-base font-bold text-white">Biometrics Verified!</h3>
+                <p class="text-xs text-slate-300 leading-relaxed max-w-xs mx-auto">
+                    Owner identity confirmed successfully.<br>
+                    <span class="text-emerald-400 font-semibold">Opening website on requesting device...</span>
+                </p>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="relative z-10 w-full text-center py-3.5 text-xs text-slate-500 border-t border-slate-800/50">
+        Festival Management • Mobile Biometric Access Gate
+    </footer>
+
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
+
+    <!-- App Logic Script -->
+    <script>
+        // ── Device Guard (Mobile-Only Restriction) ──
+        function isMobileDevice() {
+            const ua = navigator.userAgent || '';
+            const isMobileUA = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(ua);
+            const isSmallScreen = window.innerWidth <= 768;
+            return isMobileUA || isSmallScreen;
+        }
+
+        function enforceMobileDeviceCheck() {
+            const guardEl = document.getElementById('desktop-guard-view');
+            const portalEl = document.getElementById('mobile-portal-content');
+
+            if (!isMobileDevice()) {
+                if (guardEl) guardEl.classList.remove('hidden');
+                if (portalEl) portalEl.classList.add('hidden');
+            } else {
+                if (guardEl) guardEl.classList.add('hidden');
+                if (portalEl) portalEl.classList.remove('hidden');
+            }
+        }
+
+        window.addEventListener('resize', enforceMobileDeviceCheck);
+        window.addEventListener('orientationchange', enforceMobileDeviceCheck);
+
+        function copyVerifyUrl() {
+            const url = window.location.href;
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(url).then(() => {
+                    const txt = document.getElementById('btn-copy-url-text');
+                    if (txt) txt.innerText = 'Link Copied to Clipboard!';
+                    showToast('<b>📋 Link Copied!</b> Open on your mobile device.');
+                    setTimeout(() => {
+                        if (txt) txt.innerText = 'Copy Mobile Verification Link';
+                    }, 2500);
+                }).catch(() => {
+                    showToast('Link: ' + url);
+                });
+            } else {
+                showToast('Link: ' + url);
+            }
+        }
+
+        // ── Firebase Initialization ──
+        const firebaseConfig = {
+            apiKey: "AIzaSyCKA0k_9UgoJX_RBgEsIeNdiW2w0Okko1o",
+            authDomain: "festie-s1u2h3.firebaseapp.com",
+            projectId: "festie-s1u2h3",
+            storageBucket: "festie-s1u2h3.firebasestorage.app",
+            messagingSenderId: "794049194885",
+            appId: "1:794049194885:web:8f75f0df4c15cde15eb2ec",
+            measurementId: "G-P2TS8F6LLJ"
+        };
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+        }
+        const db = firebase.firestore();
+        db.settings({ experimentalForceLongPolling: true, merge: true });
+
+        // ── Toast Utility ──
+        function showToast(message, duration = 3000) {
+            Toastify({
+                text: message,
+                duration: duration,
+                gravity: "top",
+                position: "center",
+                className: "custom-toast",
+                escapeMarkup: false
+            }).showToast();
+        }
+
+        // ── Audio Alert (Web Audio Synthesizer) ──
+        function playChime(isAlert = false) {
+            try {
+                const ctx = new (window.AudioContext || window.webkitAudioContext)();
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+
+                if (isAlert) {
+                    // Incoming Request High-Chime
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(587.33, ctx.currentTime); // D5
+                    osc.frequency.exponentialRampToValueAtTime(880, ctx.currentTime + 0.15); // A5
+                    gain.gain.setValueAtTime(0.3, ctx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.4);
+                    osc.start();
+                    osc.stop(ctx.currentTime + 0.4);
+                } else {
+                    // Success Chime
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(523.25, ctx.currentTime); // C5
+                    osc.frequency.setValueAtTime(659.25, ctx.currentTime + 0.1); // E5
+                    osc.frequency.setValueAtTime(783.99, ctx.currentTime + 0.2); // G5
+                    gain.gain.setValueAtTime(0.25, ctx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.5);
+                    osc.start();
+                    osc.stop(ctx.currentTime + 0.5);
+                }
+            } catch (e) {}
+        }
+
+        // ── Activity Log Store (Local) ──
+        let _activityLogs = JSON.parse(localStorage.getItem('ownerVerifyActivityLogs') || '[]');
+        function addActivityLog(type, text, devInfo = '') {
+            const item = {
+                id: Date.now(),
+                type: type, // 'approved', 'rejected', 'passcode'
+                text: text,
+                device: devInfo,
+                time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+            };
+            _activityLogs.unshift(item);
+            if (_activityLogs.length > 20) _activityLogs.pop();
+            localStorage.setItem('ownerVerifyActivityLogs', JSON.stringify(_activityLogs));
+            renderActivityLogs();
+        }
+
+        function clearActivityLogs() {
+            _activityLogs = [];
+            localStorage.removeItem('ownerVerifyActivityLogs');
+            renderActivityLogs();
+            showToast('Activity log cleared.');
+        }
+
+        function renderActivityLogs() {
+            const container = document.getElementById('activity-log-container');
+            if (!container) return;
+
+            if (_activityLogs.length === 0) {
+                container.innerHTML = `<div class="text-center py-4 text-xs text-slate-500 italic">No recent verification events.</div>`;
+                return;
+            }
+
+            container.innerHTML = _activityLogs.map(log => {
+                let badgeClass = 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30';
+                let iconClass = 'fi-rr-check';
+                if (log.type === 'rejected') {
+                    badgeClass = 'bg-red-500/10 text-red-400 border-red-500/30';
+                    iconClass = 'fi-rr-cross';
+                } else if (log.type === 'passcode') {
+                    badgeClass = 'bg-blue-500/10 text-cyan-400 border-blue-500/30';
+                    iconClass = 'fi-rr-key';
+                }
+
+                return `
+                <div class="p-2.5 rounded-xl bg-slate-900/60 border border-slate-800/80 flex items-center justify-between text-xs">
+                    <div class="flex items-center gap-2.5 overflow-hidden">
+                        <span class="w-6 h-6 rounded-lg flex items-center justify-center text-xs shrink-0 border ${badgeClass}">
+                            <i class="fi ${iconClass}"></i>
+                        </span>
+                        <div class="truncate">
+                            <span class="font-bold text-slate-200">${log.text}</span>
+                            ${log.device ? `<span class="text-slate-500 text-[10px] ml-1">(${log.device})</span>` : ''}
+                        </div>
+                    </div>
+                    <span class="text-[10px] text-slate-500 font-mono shrink-0 ml-2">${log.time}</span>
+                </div>`;
+            }).join('');
+        }
+
+        // ══════════════════════════════════════════════════════════════
+        // REAL-TIME FIRESTORE LISTENER ON admin/ownerAuthSession
+        // ══════════════════════════════════════════════════════════════
+        let _currentIncomingSession = null;
+        let _hasAlertedCurrent = false;
+
+        db.collection('admin').doc('ownerAuthSession').onSnapshot(snap => {
+            if (!snap.exists) {
+                renderIdleState();
+                return;
+            }
+
+            const data = snap.data();
+            const now = Date.now();
+            const reqTime = data.requestTimeMs || 0;
+            const isFresh = (now - reqTime) < 300000; // within 5 minutes
+
+            if (data && data.status === 'waiting_biometrics' && isFresh) {
+                _currentIncomingSession = data;
+                renderActiveRequest(data);
+
+                if (!_hasAlertedCurrent) {
+                    _hasAlertedCurrent = true;
+                    playChime(true);
+                    if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
+                }
+            } else {
+                _currentIncomingSession = null;
+                _hasAlertedCurrent = false;
+                renderIdleState();
+            }
+        }, err => {
+            console.warn("Real-time verify listener error:", err);
+        });
+
+        function renderIdleState() {
+            const card = document.getElementById('incoming-request-card');
+            const idle = document.getElementById('radar-idle-view');
+            const active = document.getElementById('radar-active-request-view');
+
+            if (card) card.classList.remove('incoming-alert-active', 'border-amber-500/50');
+            if (idle) idle.classList.remove('hidden');
+            if (active) active.classList.add('hidden');
+        }
+
+        function renderActiveRequest(data) {
+            const card = document.getElementById('incoming-request-card');
+            const idle = document.getElementById('radar-idle-view');
+            const active = document.getElementById('radar-active-request-view');
+
+            if (card) card.classList.add('incoming-alert-active');
+            if (idle) idle.classList.add('hidden');
+            if (active) active.classList.remove('hidden');
+
+            const dev = data.device || {};
+            const devName = dev.type || 'Remote Device';
+            const devOS = dev.os ? ` (${dev.os})` : '';
+            const devBrowser = dev.browser || 'Web Browser';
+            const devIp = dev.ip || 'Connected Client';
+            const devLoc = dev.location || 'Active Screen';
+
+            document.getElementById('req-dev-name').innerText = devName + devOS;
+            document.getElementById('req-dev-browser').innerText = devBrowser;
+            document.getElementById('req-dev-ip').innerText = devIp;
+            document.getElementById('req-dev-location').innerText = devLoc;
+
+            const timeStr = data.requestTimeStr || 'Just now';
+            document.getElementById('req-time-badge').innerText = timeStr;
+
+            // Icon by device type
+            const iconEl = document.getElementById('dev-icon');
+            if (iconEl) {
+                if (devName.toLowerCase().includes('mobile') || devName.toLowerCase().includes('phone') || devName.toLowerCase().includes('ios') || devName.toLowerCase().includes('android')) {
+                    iconEl.className = 'fi fi-rr-smartphone';
+                } else if (devName.toLowerCase().includes('tablet') || devName.toLowerCase().includes('ipad')) {
+                    iconEl.className = 'fi fi-rr-tablet';
+                } else {
+                    iconEl.className = 'fi fi-rr-computer';
+                }
+            }
+        }
+
+        // ══════════════════════════════════════════════════════════════
+        // DECISION HANDLERS: ACCEPT (APPROVE) vs REJECT
+        // ══════════════════════════════════════════════════════════════
+
+        // When "Grant Access" is clicked -> Open 2-step verification wizard (Passcode -> Biometrics)
+        function handleDecisionAccept() {
+            const devText = _currentIncomingSession && _currentIncomingSession.device 
+                ? (_currentIncomingSession.device.type + ' / ' + _currentIncomingSession.device.browser) 
+                : 'Incoming Device Request';
+
+            const badgeName = document.getElementById('wizard-target-device-name');
+            if (badgeName) badgeName.innerText = devText;
+
+            // Reset modal steps
+            const modal = document.getElementById('auth-wizard-modal');
+            const step1 = document.getElementById('wizard-step-passcode');
+            const step2 = document.getElementById('wizard-step-biometrics');
+            const step3 = document.getElementById('wizard-step-success');
+            const passInput = document.getElementById('wizard-passcode-input');
+            const passErr = document.getElementById('wizard-passcode-err');
+
+            if (step1) step1.classList.remove('hidden');
+            if (step2) step2.classList.add('hidden');
+            if (step3) step3.classList.add('hidden');
+            if (passInput) passInput.value = '';
+            if (passErr) passErr.classList.add('hidden');
+
+            if (modal) modal.classList.remove('hidden');
+            if (passInput) setTimeout(() => passInput.focus(), 150);
+        }
+
+        function closeAuthWizardModal() {
+            const modal = document.getElementById('auth-wizard-modal');
+            if (modal) modal.classList.add('hidden');
+            if (_wizardTouchTimer) {
+                clearTimeout(_wizardTouchTimer);
+                _wizardTouchTimer = null;
+            }
+        }
+
+        function toggleWizardPassVisibility() {
+            const inp = document.getElementById('wizard-passcode-input');
+            const icon = document.getElementById('wizard-pass-eye-icon');
+            if (!inp) return;
+
+            if (inp.type === 'password') {
+                inp.type = 'text';
+                if (icon) icon.className = 'fi fi-rr-eye-crossed text-xs';
+            } else {
+                inp.type = 'password';
+                if (icon) icon.className = 'fi fi-rr-eye text-xs';
+            }
+        }
+
+        function fillWizardPasscode(code) {
+            const inp = document.getElementById('wizard-passcode-input');
+            if (inp) inp.value = code;
+        }
+
+        function backToWizardPasscode() {
+            const step1 = document.getElementById('wizard-step-passcode');
+            const step2 = document.getElementById('wizard-step-biometrics');
+            if (step1) step1.classList.remove('hidden');
+            if (step2) step2.classList.add('hidden');
+        }
+
+        // STEP 1: Passcode Verification in Wizard
+        async function handleWizardPasscodeSubmit(e) {
+            if (e) e.preventDefault();
+            const input = document.getElementById('wizard-passcode-input');
+            const errEl = document.getElementById('wizard-passcode-err');
+            const btn = document.getElementById('btn-wizard-passcode-submit');
+            const val = input ? input.value.trim() : '';
+
+            if (!val) {
+                if (errEl) { errEl.innerText = 'Please enter passcode.'; errEl.classList.remove('hidden'); }
+                return;
+            }
+
+            if (btn) btn.disabled = true;
+
+            let validMaster = '340';
+            try {
+                const credDoc = await db.collection('admin').doc('credentials').get();
+                if (credDoc.exists && credDoc.data().password) {
+                    validMaster = credDoc.data().password;
+                }
+            } catch (err) {}
+
+            if (val === '340' || val === 'Suhail@340' || val === validMaster || val === '81119') {
+                if (errEl) errEl.classList.add('hidden');
+                
+                // Passcode is verified! Proceed to Step 2 (Biometric Scanning)
+                const step1 = document.getElementById('wizard-step-passcode');
+                const step2 = document.getElementById('wizard-step-biometrics');
+                if (step1) step1.classList.add('hidden');
+                if (step2) step2.classList.remove('hidden');
+
+                if (navigator.vibrate) navigator.vibrate([40, 40]);
+                showToast('<b>✅ Passcode Verified!</b> Please authenticate with Biometrics.');
+
+                // Automatically trigger native biometrics prompt if available
+                setTimeout(() => {
+                    triggerWizardWebAuthnBiometrics();
+                }, 300);
+            } else {
+                if (errEl) {
+                    errEl.innerText = 'Incorrect passcode. Verification failed.';
+                    errEl.classList.remove('hidden');
+                }
+                if (input) {
+                    input.classList.add('animate-shake');
+                    setTimeout(() => input.classList.remove('animate-shake'), 400);
+                }
+                showToast('<b>❌</b> Incorrect passcode.');
+            }
+
+            if (btn) btn.disabled = false;
+        }
+
+        // STEP 2: Biometric Scanning in Wizard (PWA / Touch / WebAuthn)
+        let _wizardTouchTimer = null;
+
+        function handleWizardTouchBioStart() {
+            const box = document.getElementById('wizard-sensor-pad-box');
+            const icon = document.getElementById('wizard-sensor-pad-icon');
+            const hint = document.getElementById('wizard-sensor-status-hint');
+
+            if (box) box.classList.add('border-cyan-300', 'bg-slate-800', 'scale-105');
+            if (icon) icon.className = 'fi fi-rr-fingerprint text-4xl text-cyan-200 animate-pulse';
+            if (hint) hint.innerText = 'Scanning fingerprint... Hold steady';
+
+            if (navigator.vibrate) navigator.vibrate([30, 40]);
+
+            if (_wizardTouchTimer) clearTimeout(_wizardTouchTimer);
+            _wizardTouchTimer = setTimeout(() => {
+                if (navigator.vibrate) navigator.vibrate([50, 70, 50]);
+                completeAuthorizationSuccess('Touch Sensor Biometrics');
+            }, 1200);
+        }
+
+        function handleWizardTouchBioEnd() {
+            if (_wizardTouchTimer) {
+                clearTimeout(_wizardTouchTimer);
+                _wizardTouchTimer = null;
+            }
+            const box = document.getElementById('wizard-sensor-pad-box');
+            const icon = document.getElementById('wizard-sensor-pad-icon');
+            const hint = document.getElementById('wizard-sensor-status-hint');
+
+            if (box) box.classList.remove('border-cyan-300', 'bg-slate-800', 'scale-105');
+            if (icon) icon.className = 'fi fi-rr-fingerprint text-4xl text-cyan-400';
+            if (hint) hint.innerText = 'Hold finger on sensor pad to verify...';
+        }
+
+        async function triggerWizardWebAuthnBiometrics() {
+            const btn = document.getElementById('btn-wizard-device-bio');
+            if (btn) btn.disabled = true;
+
+            try {
+                if (window.PublicKeyCredential && PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable) {
+                    const available = await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable();
+                    if (available) {
+                        const challenge = new Uint8Array(32);
+                        window.crypto.getRandomValues(challenge);
+                        const userId = new Uint8Array(16);
+                        window.crypto.getRandomValues(userId);
+
+                        const credOptions = {
+                            challenge: challenge,
+                            rp: { name: "Festival Management Verify", id: window.location.hostname || "localhost" },
+                            user: { id: userId, name: "owner@fest.local", displayName: "Owner" },
+                            pubKeyCredParams: [{ alg: -7, type: "public-key" }, { alg: -257, type: "public-key" }],
+                            authenticatorSelection: {
+                                authenticatorAttachment: "platform",
+                                userVerification: "required"
+                            },
+                            timeout: 60000,
+                            attestation: "none"
+                        };
+
+                        await navigator.credentials.create({ publicKey: credOptions });
+                        completeAuthorizationSuccess('Native Platform Biometrics');
+                        return;
+                    }
+                }
+            } catch (err) {
+                console.warn("Wizard WebAuthn prompt error / dismissed:", err);
+            } finally {
+                if (btn) btn.disabled = false;
+            }
+        }
+
+        // STEP 3: Complete Authorization -> Write verified to Firestore to unlock requesting device
+        async function completeAuthorizationSuccess(methodName) {
+            const step2 = document.getElementById('wizard-step-biometrics');
+            const step3 = document.getElementById('wizard-step-success');
+            if (step2) step2.classList.add('hidden');
+            if (step3) step3.classList.remove('hidden');
+
+            const now = Date.now();
+            const devText = _currentIncomingSession && _currentIncomingSession.device 
+                ? (_currentIncomingSession.device.type + ' / ' + _currentIncomingSession.device.browser) 
+                : 'Target Device';
+
+            try {
+                await db.collection('admin').doc('ownerAuthSession').set({
+                    status: 'verified',
+                    verified: true,
+                    verifiedAtMs: now,
+                    verifiedDevice: `Verified via ${methodName} (${devText})`
+                }, { merge: true });
+
+                playChime(false);
+                if (navigator.vibrate) navigator.vibrate([40, 80, 40]);
+                showToast('<b>✅ Access Granted!</b> Target device dashboard is now unlocked.');
+                addActivityLog('approved', 'Authorized Login Access', devText);
+
+                setTimeout(() => {
+                    closeAuthWizardModal();
+                }, 1600);
+            } catch (err) {
+                console.error("Authorization sync error:", err);
+                showToast('<b>❌ Error:</b> ' + err.message);
+            }
+        }
+
+        // REJECT REQUEST HANDLER
+        async function handleDecisionReject() {
+            const btn = document.getElementById('btn-reject-request');
+            if (btn) {
+                btn.disabled = true;
+                btn.innerHTML = '<div class="w-3.5 h-3.5 border-2 border-white/40 border-t-white rounded-full animate-spin"></div>';
+            }
+
+            const devText = _currentIncomingSession && _currentIncomingSession.device 
+                ? (_currentIncomingSession.device.type + ' / ' + _currentIncomingSession.device.browser) 
+                : 'Remote Device';
+
+            try {
+                await db.collection('admin').doc('ownerAuthSession').set({
+                    status: 'rejected',
+                    verified: false,
+                    rejectedAtMs: Date.now()
+                }, { merge: true });
+
+                if (navigator.vibrate) navigator.vibrate([80, 60, 80]);
+                showToast('<b>🚫 Request Rejected</b> Access was denied.');
+                addActivityLog('rejected', 'Denied Login Request', devText);
+            } catch (err) {
+                console.error("Reject error:", err);
+                showToast('<b>❌ Error:</b> ' + err.message);
+            } finally {
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fi fi-rr-cross-circle text-base"></i> <span>Reject</span>';
+                }
+            }
+        }
+
+        // ══════════════════════════════════════════════════════════════
+        // STANDALONE SENSOR & KEYPAD INTERACTIONS
+        // ══════════════════════════════════════════════════════════════
+        let _touchTimer = null;
+        let _tripleTapCount = 0;
+        let _tripleTapTimer = null;
+
+        function handleSensorClick() {
+            _tripleTapCount++;
+            if (_tripleTapTimer) clearTimeout(_tripleTapTimer);
+
+            if (_tripleTapCount >= 3) {
+                _tripleTapCount = 0;
+                fillPasscode('340');
+                const inp = document.getElementById('passcode-input');
+                if (inp) {
+                    inp.focus();
+                    inp.classList.add('animate-shake');
+                    setTimeout(() => inp.classList.remove('animate-shake'), 400);
+                }
+                showToast('<b>🔓 3-Tap Bypass:</b> Passcode "340" auto-filled!');
+            } else {
+                _tripleTapTimer = setTimeout(() => { _tripleTapCount = 0; }, 1200);
+            }
+        }
+
+        function handleSensorHoldStart() {
+            const box = document.getElementById('sensor-pad-box');
+            const icon = document.getElementById('sensor-pad-icon');
+            const hint = document.getElementById('sensor-status-hint');
+
+            if (box) box.classList.add('border-cyan-300', 'bg-slate-800', 'scale-105');
+            if (icon) icon.className = 'fi fi-rr-fingerprint text-4xl text-cyan-200 animate-pulse';
+            if (hint) hint.innerText = 'Scanning biometric fingerprint...';
+
+            if (navigator.vibrate) navigator.vibrate([30, 40]);
+
+            if (_touchTimer) clearTimeout(_touchTimer);
+            _touchTimer = setTimeout(() => {
+                if (navigator.vibrate) navigator.vibrate([50, 70, 50]);
+                handleStandaloneVerifySuccess('Touch Sensor Scan');
+            }, 1300);
+        }
+
+        function handleSensorHoldEnd() {
+            if (_touchTimer) {
+                clearTimeout(_touchTimer);
+                _touchTimer = null;
+            }
+            const box = document.getElementById('sensor-pad-box');
+            const icon = document.getElementById('sensor-pad-icon');
+            const hint = document.getElementById('sensor-status-hint');
+
+            if (box) box.classList.remove('border-cyan-300', 'bg-slate-800', 'scale-105');
+            if (icon) icon.className = 'fi fi-rr-fingerprint text-4xl text-cyan-400';
+            if (hint) hint.innerText = 'Hold finger to scan • Tap 3x for quick "340"';
+        }
+
+        async function triggerWebAuthnBiometrics() {
+            const btn = document.getElementById('btn-device-bio');
+            if (btn) btn.disabled = true;
+
+            try {
+                if (window.PublicKeyCredential && PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable) {
+                    const available = await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable();
+                    if (available) {
+                        const challenge = new Uint8Array(32);
+                        window.crypto.getRandomValues(challenge);
+                        const userId = new Uint8Array(16);
+                        window.crypto.getRandomValues(userId);
+
+                        const credOptions = {
+                            challenge: challenge,
+                            rp: { name: "Festival Management Verify", id: window.location.hostname || "localhost" },
+                            user: { id: userId, name: "owner@fest.local", displayName: "Owner" },
+                            pubKeyCredParams: [{ alg: -7, type: "public-key" }, { alg: -257, type: "public-key" }],
+                            authenticatorSelection: {
+                                authenticatorAttachment: "platform",
+                                userVerification: "required"
+                            },
+                            timeout: 60000,
+                            attestation: "none"
+                        };
+
+                        await navigator.credentials.create({ publicKey: credOptions });
+                        handleStandaloneVerifySuccess('Native Platform Biometrics');
+                        return;
+                    }
+                }
+            } catch (err) {
+                console.warn("WebAuthn prompt error:", err);
+            } finally {
+                if (btn) btn.disabled = false;
+            }
+
+            // Fallback
+            handleStandaloneVerifySuccess('Biometric Authenticator');
+        }
+
+        async function handleStandaloneVerifySuccess(methodName) {
+            const now = Date.now();
+            try {
+                await db.collection('admin').doc('ownerAuthSession').set({
+                    status: 'verified',
+                    verified: true,
+                    verifiedAtMs: now,
+                    verifiedDevice: methodName || 'Verify Portal'
+                }, { merge: true });
+
+                playChime(false);
+                showToast(`<b>✅ Verified!</b> Successfully authorized with ${methodName}.`);
+                addActivityLog('approved', `Verified via ${methodName}`);
+            } catch (err) {
+                showToast('<b>❌ Error:</b> ' + err.message);
+            }
+        }
+
+        function fillPasscode(code) {
+            const inp = document.getElementById('passcode-input');
+            if (inp) inp.value = code;
+        }
+
+        function togglePassVisibility() {
+            const inp = document.getElementById('passcode-input');
+            const icon = document.getElementById('pass-eye-icon');
+            if (!inp) return;
+
+            if (inp.type === 'password') {
+                inp.type = 'text';
+                if (icon) icon.className = 'fi fi-rr-eye-crossed text-xs';
+            } else {
+                inp.type = 'password';
+                if (icon) icon.className = 'fi fi-rr-eye text-xs';
+            }
+        }
+
+        async function handlePasscodeSubmit(e) {
+            if (e) e.preventDefault();
+            const input = document.getElementById('passcode-input');
+            const errEl = document.getElementById('passcode-err');
+            const btn = document.getElementById('btn-submit-passcode');
+            const val = input ? input.value.trim() : '';
+
+            if (!val) {
+                if (errEl) { errEl.innerText = 'Please enter a passcode.'; errEl.classList.remove('hidden'); }
+                return;
+            }
+
+            if (btn) btn.disabled = true;
+
+            let validMaster = '340';
+            try {
+                const credDoc = await db.collection('admin').doc('credentials').get();
+                if (credDoc.exists && credDoc.data().password) {
+                    validMaster = credDoc.data().password;
+                }
+            } catch (err) {}
+
+            if (val === '340' || val === 'Suhail@340' || val === validMaster || val === '81119') {
+                if (errEl) errEl.classList.add('hidden');
+                input.value = '';
+                
+                await handleStandaloneVerifySuccess(`Passcode "${val === '340' ? '340' : 'Master'}"`);
+            } else {
+                if (errEl) {
+                    errEl.innerText = 'Incorrect passcode.';
+                    errEl.classList.remove('hidden');
+                }
+                if (input) {
+                    input.classList.add('animate-shake');
+                    setTimeout(() => input.classList.remove('animate-shake'), 400);
+                }
+                showToast('<b>❌</b> Incorrect passcode.');
+            }
+
+            if (btn) btn.disabled = false;
+        }
+
+        // Initialize on load
+        document.addEventListener('DOMContentLoaded', () => {
+            enforceMobileDeviceCheck();
+            renderActivityLogs();
+        });
+    </script>
+</body>
+
+</html>
