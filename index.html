@@ -540,6 +540,11 @@
                     Owner identity confirmed successfully.<br>
                     <span class="text-emerald-400 font-semibold">Opening website on requesting device...</span>
                 </p>
+                <button type="button" onclick="openFestivalAccount()"
+                    class="w-full mt-3 py-2.5 px-4 rounded-xl bg-gradient-to-r from-emerald-500 to-cyan-600 hover:opacity-95 text-white font-bold text-xs shadow-md transition-all flex items-center justify-center gap-2">
+                    <i class="fi fi-rr-apps"></i>
+                    <span>Open Festival Account</span>
+                </button>
             </div>
 
         </div>
@@ -669,6 +674,41 @@
             } catch (e) {}
         }
 
+        function establishOwnerSession() {
+            localStorage.setItem('isLoggedIn', 'true');
+            localStorage.setItem('userRole', 'owner');
+            localStorage.setItem('ownerVerified', 'true');
+            localStorage.setItem('userManagement', 'true');
+            localStorage.setItem('resultManagement', 'true');
+            localStorage.setItem('semiOwner', 'true');
+            localStorage.setItem('innerDashboard', 'true');
+            localStorage.setItem('festUserName', 'Owner');
+            localStorage.setItem('festUserId', 'owner');
+        }
+
+        function openFestivalAccount() {
+            establishOwnerSession();
+            window.location.href = '../dashboard.html';
+        }
+
+        async function syncOwnerAuthorization(payload) {
+            if (!payload.sessionId) {
+                throw new Error('The login request expired. Start sign-in again on the festival device.');
+            }
+
+            payload.verifiedAt = firebase.firestore.FieldValue.serverTimestamp();
+            payload.verificationId = 'portal_' + Date.now() + '_' + Math.random().toString(36).slice(2, 9);
+            payload.syncVersion = 2;
+            await db.collection('admin').doc('ownerAuthSession').set(payload, { merge: true });
+
+            if (typeof db.waitForPendingWrites === 'function') {
+                await Promise.race([
+                    db.waitForPendingWrites(),
+                    new Promise((_, reject) => setTimeout(() => reject(new Error('System sync timed out. Check the internet connection.')), 12000))
+                ]);
+            }
+        }
+
         // ── Activity Log Store (Local) ──
         let _activityLogs = JSON.parse(localStorage.getItem('ownerVerifyActivityLogs') || '[]');
         function addActivityLog(type, text, devInfo = '') {
@@ -742,8 +782,11 @@
 
             const data = snap.data();
             const now = Date.now();
-            const reqTime = data.requestTimeMs || 0;
-            const isFresh = (now - reqTime) < 300000; // within 5 minutes
+            const serverRequestTime = data.requestTime && typeof data.requestTime.toMillis === 'function'
+                ? data.requestTime.toMillis()
+                : null;
+            const reqTime = serverRequestTime || Number(data.requestTimeMs) || 0;
+            const isFresh = reqTime && Math.abs(now - reqTime) < 600000;
 
             if (data && data.status === 'waiting_biometrics' && isFresh) {
                 _currentIncomingSession = data;
@@ -1007,8 +1050,8 @@
         async function completeAuthorizationSuccess(methodName) {
             const step2 = document.getElementById('wizard-step-biometrics');
             const step3 = document.getElementById('wizard-step-success');
-            if (step2) step2.classList.add('hidden');
-            if (step3) step3.classList.remove('hidden');
+            const statusHint = document.getElementById('wizard-sensor-status-hint');
+            if (statusHint) statusHint.innerText = 'Biometric accepted. Connecting to the festival account...';
 
             const now = Date.now();
             const devText = _currentIncomingSession && _currentIncomingSession.device 
@@ -1017,25 +1060,27 @@
             const sessId = _currentIncomingSession ? _currentIncomingSession.sessionId : null;
 
             try {
-                await db.collection('admin').doc('ownerAuthSession').set({
+                await syncOwnerAuthorization({
                     sessionId: sessId,
                     status: 'verified',
                     verified: true,
                     verifiedAtMs: now,
                     verifiedDevice: `Verified via ${methodName} (${devText})`
-                }, { merge: true });
+                });
+
+                establishOwnerSession();
+                if (step2) step2.classList.add('hidden');
+                if (step3) step3.classList.remove('hidden');
 
                 playChime(false);
                 if (navigator.vibrate) navigator.vibrate([40, 80, 40]);
                 showToast('<b>✅ Access Granted!</b> Target device dashboard is now unlocked.');
                 addActivityLog('approved', 'Authorized Login Access', devText);
 
-                setTimeout(() => {
-                    closeAuthWizardModal();
-                }, 1600);
             } catch (err) {
                 console.error("Authorization sync error:", err);
                 showToast('<b>❌ Error:</b> ' + err.message);
+                if (statusHint) statusHint.innerText = 'Could not connect to the festival account. Please try again.';
             }
         }
 
@@ -1176,19 +1221,28 @@
 
         async function handleStandaloneVerifySuccess(methodName) {
             const now = Date.now();
-            const sessId = _currentIncomingSession ? _currentIncomingSession.sessionId : null;
+            // A standalone passcode/biometric login opens this phone's festival account.
+            // It uses its own session id so it cannot approve an unrelated desktop request.
+            const sessId = _currentIncomingSession && _currentIncomingSession.sessionId
+                ? _currentIncomingSession.sessionId
+                : 'standalone_' + now + '_' + Math.random().toString(36).slice(2, 8);
             try {
-                await db.collection('admin').doc('ownerAuthSession').set({
+                await syncOwnerAuthorization({
                     sessionId: sessId,
                     status: 'verified',
                     verified: true,
                     verifiedAtMs: now,
                     verifiedDevice: methodName || 'Verify Portal'
-                }, { merge: true });
+                });
 
+                establishOwnerSession();
                 playChime(false);
                 showToast(`<b>✅ Verified!</b> Successfully authorized with ${methodName}.`);
                 addActivityLog('approved', `Verified via ${methodName}`);
+
+                // Standalone passcode/sensor authorization is being performed on this device,
+                // so continue directly into its festival account after sync completes.
+                setTimeout(() => openFestivalAccount(), 900);
             } catch (err) {
                 showToast('<b>❌ Error:</b> ' + err.message);
             }
